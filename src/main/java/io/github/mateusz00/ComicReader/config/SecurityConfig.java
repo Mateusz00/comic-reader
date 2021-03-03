@@ -2,6 +2,7 @@ package io.github.mateusz00.ComicReader.config;
 
 import io.github.mateusz00.ComicReader.filter.JWTAuthenticationFilter;
 import io.github.mateusz00.ComicReader.filter.JWTAuthorizationFilter;
+import io.github.mateusz00.ComicReader.filter.SecurityConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +16,12 @@ import javax.servlet.http.HttpServletResponse;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter
 {
+    final private SecurityConstants securityConstants;
+
+    public SecurityConfig(SecurityConstants securityConstants) {
+        this.securityConstants = securityConstants;
+    }
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.inMemoryAuthentication().withUser("user").password("{noop}user").roles("USER");
@@ -30,8 +37,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
         http.authorizeRequests()
                 .antMatchers("/api/**").permitAll()
                 .and()
-                .addFilter(new JWTAuthenticationFilter(authenticationManager()))
-                .addFilter(new JWTAuthorizationFilter(authenticationManager()))
+                .addFilter(new JWTAuthenticationFilter(authenticationManager(), securityConstants))
+                .addFilter(new JWTAuthorizationFilter(authenticationManager(), securityConstants))
                 .exceptionHandling()
                 .authenticationEntryPoint((request, response, exception) ->
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error: Unauthorized"));

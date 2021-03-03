@@ -19,14 +19,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import static io.github.mateusz00.ComicReader.filter.SecurityConstants.*;
-
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter
 {
     final private AuthenticationManager authenticationManager;
+    final private SecurityConstants securityConstants;
 
-    public JWTAuthenticationFilter(AuthenticationManager authenticationManager) {
+    public JWTAuthenticationFilter(AuthenticationManager authenticationManager, SecurityConstants constants) {
         this.authenticationManager = authenticationManager;
+        this.securityConstants = constants;
     }
 
     @Override
@@ -47,9 +47,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                                             Authentication authResult) {
         String token = JWT.create()
                 .withSubject(((User) authResult.getPrincipal()).getUsername())
-                .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .sign(Algorithm.HMAC512(SECRET));
+                .withExpiresAt(new Date(System.currentTimeMillis() + securityConstants.EXPIRATION_TIME))
+                .sign(Algorithm.HMAC512(securityConstants.SECRET));
         
-        response.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_PREFIX + token);
+        response.addHeader(HttpHeaders.AUTHORIZATION, securityConstants.TOKEN_PREFIX + token);
     }
 }
