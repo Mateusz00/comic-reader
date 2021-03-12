@@ -6,6 +6,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.FilterChain;
@@ -13,16 +15,18 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Optional;
 
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter
 {
-    private SecurityConstants securityConstants;
+    private final SecurityConstants securityConstants;
+    private final UserDetailsService userDetailsService;
 
-    public JWTAuthorizationFilter(AuthenticationManager authenticationManager, SecurityConstants constants) {
+    public JWTAuthorizationFilter(AuthenticationManager authenticationManager, SecurityConstants constants,
+                                  UserDetailsService userDetailsService) {
         super(authenticationManager);
         this.securityConstants = constants;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -33,22 +37,22 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter
         if(token != null && token.startsWith(securityConstants.TOKEN_PREFIX)) {
             var authToken = getAuthenticationToken(token);
 
-            if(authToken.isPresent())
-                SecurityContextHolder.getContext().setAuthentication(authToken.get());
+            authToken.ifPresent(usernamePasswordAuthenticationToken ->
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken));
         }
 
         chain.doFilter(request, response);
     }
 
     private Optional<UsernamePasswordAuthenticationToken> getAuthenticationToken(String token) {
-        String user = JWT.require(Algorithm.HMAC512(securityConstants.SECRET))
+        String userName = JWT.require(Algorithm.HMAC512(securityConstants.SECRET))
                 .build()
                 .verify(token.replace(securityConstants.TOKEN_PREFIX, ""))
                 .getSubject();
 
-        if(user != null) {
-            // TODO: Add UserDetailsService and add authorities to token
-            return Optional.of(new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>()));
+        if(userName != null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
+            return Optional.of(new UsernamePasswordAuthenticationToken(userName, null, userDetails.getAuthorities()));
         }
         else
             return Optional.empty();

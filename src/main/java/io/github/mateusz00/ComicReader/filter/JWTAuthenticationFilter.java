@@ -16,7 +16,6 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter
@@ -36,7 +35,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             UserLogin credentials = new ObjectMapper().readValue(req.getInputStream(), UserLogin.class);
 
             return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(credentials.getUsername(),
-                    credentials.getPassword(), new ArrayList<>()));
+                    credentials.getPassword()));
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
